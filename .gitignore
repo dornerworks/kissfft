@@ -1,0 +1,17 @@
+
+# KISS build objects
+kiss_fft130/test/bm_*
+kiss_fft130/test/st_*
+kiss_fft130/test/tkfc_*
+kiss_fft130/test/tr_*
+kiss_fft130/tools/fastconv_*
+kiss_fft130/tools/fastconvr_*
+kiss_fft130/tools/fft_*
+
+# build objects
+*.o
+*.s
+
+# directories
+workspace
+build
