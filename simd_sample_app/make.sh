@@ -9,7 +9,7 @@ OPTIMIZATION='-O2'
 CFLAGS='-DFIXED_POINT=32'
 
 SRCDIR=.
-KISSDIR=../kiss_fft130
+KISSDIR=../kiss_fft
 INCLUDEDIRS="-I$KISSDIR -I$KISSDIR/tools"
 BUILDDIR=./build
 TARGET=simd_sample_app
