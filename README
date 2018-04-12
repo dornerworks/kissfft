@@ -1,0 +1,28 @@
+This repo exists to demonstrate the benefits and ease of use of SSE and AVX extensions added to Mark Borgerding's KISS FFT library.
+
+This does NOT utilize the USE_SIMD compiler option already included in KISS FFT. That offers SSE support to the floating point implementation. This uses SSE and AVX modification to support the fixed point implementation.
+
+These modifications were developed by Stewart Hildebrand, Anthony Boorsma, and Kevin Kredit of DornerWorks Ltd. Visit https://dornerworks.com/ and https://dornerworks.com/about/blog/ [TODO link to blog post] to learn more about the company and writing vectorized code.
+
+========
+CONTENTS
+========
+ * README
+    - this file
+ * LICENSE
+    -  the BSD 3-Clause “Revised” License, same as the original KISS FFT library
+ * kiss_fft130/
+    - in the initial commit, a clone of the KISS FFT library; see git history for modifications
+ * simd_sample_app/
+    - source for a sample application designed to demonstrate the ease of use and the accleration resulting from the SSE and AVX extensions
+
+=====
+USAGE
+=====
+ * simd_sample_app
+    - enter the simd_sample_app/ directory and run `./make.sh`
+    - execute the application with `./build/simd_sample_app`
+    - observe the results
+ * your own application
+    - use simd_sample_app or any other application using the original KISS FFT library as an example
+    - include and copy the source code into your application while respecting the terms of the license
