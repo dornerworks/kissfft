@@ -58,7 +58,7 @@ static void kf_bfly4(
     tw3 = tw2 = tw1 = st->twiddles;
 
     do {
-        C_FIXDIV(*Fout,4); C_FIXDIV(Fout[m],4); C_FIXDIV(Fout[m2],4); C_FIXDIV(Fout[m3],4);
+        C_FIXDIVBY4(*Fout); C_FIXDIVBY4(Fout[m]); C_FIXDIVBY4(Fout[m2]); C_FIXDIVBY4(Fout[m3]);
 
         C_MUL(scratch[0],Fout[m] , *tw1 );
         C_MUL(scratch[1],Fout[m2] , *tw2 );
@@ -75,15 +75,15 @@ static void kf_bfly4(
         C_ADDTO( *Fout , scratch[3] );
 
         if(st->inverse) {
-            Fout[m].r = scratch[5].r - scratch[4].i;
-            Fout[m].i = scratch[5].i + scratch[4].r;
-            Fout[m3].r = scratch[5].r + scratch[4].i;
-            Fout[m3].i = scratch[5].i - scratch[4].r;
+            Fout[m].r = S_SUB(scratch[5].r, scratch[4].i);
+            Fout[m].i = S_ADD(scratch[5].i, scratch[4].r);
+            Fout[m3].r = S_ADD(scratch[5].r, scratch[4].i);
+            Fout[m3].i = S_SUB(scratch[5].i, scratch[4].r);
         }else{
-            Fout[m].r = scratch[5].r + scratch[4].i;
-            Fout[m].i = scratch[5].i - scratch[4].r;
-            Fout[m3].r = scratch[5].r - scratch[4].i;
-            Fout[m3].i = scratch[5].i + scratch[4].r;
+            Fout[m].r = S_ADD(scratch[5].r, scratch[4].i);
+            Fout[m].i = S_SUB(scratch[5].i, scratch[4].r);
+            Fout[m3].r = S_SUB(scratch[5].r, scratch[4].i);
+            Fout[m3].i = S_ADD(scratch[5].i, scratch[4].r);
         }
         ++Fout;
     }while(--k);
@@ -116,18 +116,18 @@ static void kf_bfly3(
          tw1 += fstride;
          tw2 += fstride*2;
 
-         Fout[m].r = Fout->r - HALF_OF(scratch[3].r);
-         Fout[m].i = Fout->i - HALF_OF(scratch[3].i);
+         Fout[m].r = S_SUB(Fout->r, HALF_OF(scratch[3].r));
+         Fout[m].i = S_SUB(Fout->i, HALF_OF(scratch[3].i));
 
          C_MULBYSCALAR( scratch[0] , epi3.i );
 
          C_ADDTO(*Fout,scratch[3]);
 
-         Fout[m2].r = Fout[m].r + scratch[0].i;
-         Fout[m2].i = Fout[m].i - scratch[0].r;
+         Fout[m2].r = S_ADD(Fout[m].r, scratch[0].i);
+         Fout[m2].i = S_SUB(Fout[m].i, scratch[0].r);
 
-         Fout[m].r -= scratch[0].i;
-         Fout[m].i += scratch[0].r;
+         S_SUBFROM(Fout[m].r, scratch[0].i);
+         S_ADDTO(Fout[m].i, scratch[0].r);
 
          ++Fout;
      }while(--k);
@@ -170,22 +170,22 @@ static void kf_bfly5(
         C_ADD( scratch[8],scratch[2],scratch[3]);
         C_SUB( scratch[9],scratch[2],scratch[3]);
 
-        Fout0->r += scratch[7].r + scratch[8].r;
-        Fout0->i += scratch[7].i + scratch[8].i;
+        S_ADD2TO(Fout0->r, scratch[7].r, scratch[8].r);
+        S_ADD2TO(Fout0->i, scratch[7].i, scratch[8].i);
 
-        scratch[5].r = scratch[0].r + S_MUL(scratch[7].r,ya.r) + S_MUL(scratch[8].r,yb.r);
-        scratch[5].i = scratch[0].i + S_MUL(scratch[7].i,ya.r) + S_MUL(scratch[8].i,yb.r);
+        scratch[5].r = S_ADD3(scratch[0].r, S_MUL(scratch[7].r,ya.r), S_MUL(scratch[8].r,yb.r));
+        scratch[5].i = S_ADD3(scratch[0].i, S_MUL(scratch[7].i,ya.r), S_MUL(scratch[8].i,yb.r));
 
-        scratch[6].r =  S_MUL(scratch[10].i,ya.i) + S_MUL(scratch[9].i,yb.i);
-        scratch[6].i = -S_MUL(scratch[10].r,ya.i) - S_MUL(scratch[9].r,yb.i);
+        scratch[6].r = S_ADD(S_MUL(scratch[10].i,ya.i), S_MUL(scratch[9].i,yb.i));
+        scratch[6].i = S_SUB(S_NEGATE(S_MUL(scratch[10].r,ya.i)), S_MUL(scratch[9].r,yb.i));
 
         C_SUB(*Fout1,scratch[5],scratch[6]);
         C_ADD(*Fout4,scratch[5],scratch[6]);
 
-        scratch[11].r = scratch[0].r + S_MUL(scratch[7].r,yb.r) + S_MUL(scratch[8].r,ya.r);
-        scratch[11].i = scratch[0].i + S_MUL(scratch[7].i,yb.r) + S_MUL(scratch[8].i,ya.r);
-        scratch[12].r = - S_MUL(scratch[10].i,yb.i) + S_MUL(scratch[9].i,ya.i);
-        scratch[12].i = S_MUL(scratch[10].r,yb.i) - S_MUL(scratch[9].r,ya.i);
+        scratch[11].r = S_ADD3(scratch[0].r, S_MUL(scratch[7].r,yb.r), S_MUL(scratch[8].r,ya.r));
+        scratch[11].i = S_ADD3(scratch[0].i, S_MUL(scratch[7].i,yb.r), S_MUL(scratch[8].i,ya.r));
+        scratch[12].r = S_ADD(S_NEGATE(S_MUL(scratch[10].i,yb.i)), S_MUL(scratch[9].i,ya.i));
+        scratch[12].i = S_SUB(S_MUL(scratch[10].r,yb.i), S_MUL(scratch[9].r,ya.i));
 
         C_ADD(*Fout2,scratch[11],scratch[12]);
         C_SUB(*Fout3,scratch[11],scratch[12]);
@@ -250,7 +250,7 @@ void kf_work(
     const kiss_fft_cpx * Fout_end = Fout + p*m;
 
 #ifdef _OPENMP
-    // use openmp extensions at the 
+    // use openmp extensions at the
     // top-level (not recursive)
     if (fstride==1 && p<=5)
     {
@@ -258,15 +258,15 @@ void kf_work(
 
         // execute the p different work units in different threads
 #       pragma omp parallel for
-        for (k=0;k<p;++k) 
+        for (k=0;k<p;++k)
             kf_work( Fout +k*m, f+ fstride*in_stride*k,fstride*p,in_stride,factors,st);
         // all threads have joined by this point
 
         switch (p) {
             case 2: kf_bfly2(Fout,fstride,st,m); break;
-            case 3: kf_bfly3(Fout,fstride,st,m); break; 
+            case 3: kf_bfly3(Fout,fstride,st,m); break;
             case 4: kf_bfly4(Fout,fstride,st,m); break;
-            case 5: kf_bfly5(Fout,fstride,st,m); break; 
+            case 5: kf_bfly5(Fout,fstride,st,m); break;
             default: kf_bfly_generic(Fout,fstride,st,m,p); break;
         }
         return;
@@ -282,7 +282,7 @@ void kf_work(
         do{
             // recursive call:
             // DFT of size m*p performed by doing
-            // p instances of smaller DFTs of size m, 
+            // p instances of smaller DFTs of size m,
             // each one takes a decimated version of the input
             kf_work( Fout , f, fstride*p, in_stride, factors,st);
             f += fstride*in_stride;
@@ -291,21 +291,21 @@ void kf_work(
 
     Fout=Fout_beg;
 
-    // recombine the p smaller DFTs 
+    // recombine the p smaller DFTs
     switch (p) {
         case 2: kf_bfly2(Fout,fstride,st,m); break;
-        case 3: kf_bfly3(Fout,fstride,st,m); break; 
+        case 3: kf_bfly3(Fout,fstride,st,m); break;
         case 4: kf_bfly4(Fout,fstride,st,m); break;
-        case 5: kf_bfly5(Fout,fstride,st,m); break; 
+        case 5: kf_bfly5(Fout,fstride,st,m); break;
         default: kf_bfly_generic(Fout,fstride,st,m,p); break;
     }
 }
 
 /*  facbuf is populated by p1,m1,p2,m2, ...
-    where 
+    where
     p[i] * m[i] = m[i-1]
     m0 = n                  */
-static 
+static
 void kf_factor(int n,int * facbuf)
 {
     int p=4;
@@ -355,8 +355,8 @@ kiss_fft_cfg kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem 
         st->inverse = inverse_fft;
 
         for (i=0;i<nfft;++i) {
-            const double pi=3.141592653589793238462643383279502884197169399375105820974944;
-            double phase = -2*pi*i / nfft;
+            const double two_pi=6.2831853071795862;
+            double phase = -two_pi*i / nfft;
             if (st->inverse)
                 phase *= -1;
             kf_cexp(st->twiddles+i, phase );

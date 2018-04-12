@@ -21,6 +21,9 @@ struct kiss_fftr_state{
     kiss_fft_cpx * super_twiddles;
 #ifdef USE_SIMD
     void * pad;
+#if USE_SIMD == 8
+    void * morepad[4];
+#endif
 #endif
 };
 
@@ -83,40 +86,45 @@ void kiss_fftr(kiss_fftr_cfg st,const kiss_fft_scalar *timedata,kiss_fft_cpx *fr
      * contains the sum of the even-numbered elements of the input time sequence
      * The imag part is the sum of the odd-numbered elements
      *
-     * The sum of tdc.r and tdc.i is the sum of the input time sequence. 
+     * The sum of tdc.r and tdc.i is the sum of the input time sequence.
      *      yielding DC of input time sequence
-     * The difference of tdc.r - tdc.i is the sum of the input (dot product) [1,-1,1,-1... 
+     * The difference of tdc.r - tdc.i is the sum of the input (dot product) [1,-1,1,-1...
      *      yielding Nyquist bin of input time sequence
      */
- 
+
     tdc.r = st->tmpbuf[0].r;
     tdc.i = st->tmpbuf[0].i;
-    C_FIXDIV(tdc,2);
+    C_FIXDIVBY2(tdc);
     CHECK_OVERFLOW_OP(tdc.r ,+, tdc.i);
     CHECK_OVERFLOW_OP(tdc.r ,-, tdc.i);
-    freqdata[0].r = tdc.r + tdc.i;
-    freqdata[ncfft].r = tdc.r - tdc.i;
-#ifdef USE_SIMD    
-    freqdata[ncfft].i = freqdata[0].i = _mm_set1_ps(0);
+    freqdata[0].r = S_ADD(tdc.r, tdc.i);
+#ifdef USE_SIMD
+# if defined(FIXED_POINT) && USE_SIMD == 4
+    freqdata[0].i = _mm_set1_epi32(0);
+# elif defined(FIXED_POINT) && USE_SIMD == 8
+    freqdata[0].i = _mm256_set1_epi32(0);
+# else
+    freqdata[0].i = _mm_set1_ps(0);
+# endif
 #else
-    freqdata[ncfft].i = freqdata[0].i = 0;
+    freqdata[0].i = 0;
 #endif
 
     for ( k=1;k <= ncfft/2 ; ++k ) {
-        fpk    = st->tmpbuf[k]; 
+        fpk    = st->tmpbuf[k];
         fpnk.r =   st->tmpbuf[ncfft-k].r;
-        fpnk.i = - st->tmpbuf[ncfft-k].i;
-        C_FIXDIV(fpk,2);
-        C_FIXDIV(fpnk,2);
+        fpnk.i = S_NEGATE(st->tmpbuf[ncfft-k].i);
+        C_FIXDIVBY2(fpk);
+        C_FIXDIVBY2(fpnk);
 
         C_ADD( f1k, fpk , fpnk );
         C_SUB( f2k, fpk , fpnk );
         C_MUL( tw , f2k , st->super_twiddles[k-1]);
 
-        freqdata[k].r = HALF_OF(f1k.r + tw.r);
-        freqdata[k].i = HALF_OF(f1k.i + tw.i);
-        freqdata[ncfft-k].r = HALF_OF(f1k.r - tw.r);
-        freqdata[ncfft-k].i = HALF_OF(tw.i - f1k.i);
+        freqdata[k].r = HALF_OF(S_ADD(f1k.r, tw.r));
+        freqdata[k].i = HALF_OF(S_ADD(f1k.i, tw.i));
+        freqdata[ncfft-k].r = HALF_OF(S_SUB(f1k.r, tw.r));
+        freqdata[ncfft-k].i = HALF_OF(S_SUB(tw.i, f1k.i));
     }
 }
 
@@ -132,15 +140,15 @@ void kiss_fftri(kiss_fftr_cfg st,const kiss_fft_cpx *freqdata,kiss_fft_scalar *t
 
     ncfft = st->substate->nfft;
 
-    st->tmpbuf[0].r = freqdata[0].r + freqdata[ncfft].r;
-    st->tmpbuf[0].i = freqdata[0].r - freqdata[ncfft].r;
+    st->tmpbuf[0].r = S_ADD(freqdata[0].r, freqdata[ncfft].r);
+    st->tmpbuf[0].i = S_SUB(freqdata[0].r, freqdata[ncfft].r);
     C_FIXDIV(st->tmpbuf[0],2);
 
     for (k = 1; k <= ncfft / 2; ++k) {
         kiss_fft_cpx fk, fnkc, fek, fok, tmp;
         fk = freqdata[k];
         fnkc.r = freqdata[ncfft - k].r;
-        fnkc.i = -freqdata[ncfft - k].i;
+        fnkc.i = S_NEGATE(freqdata[ncfft - k].i);
         C_FIXDIV( fk , 2 );
         C_FIXDIV( fnkc , 2 );
 
@@ -149,8 +157,12 @@ void kiss_fftri(kiss_fftr_cfg st,const kiss_fft_cpx *freqdata,kiss_fft_scalar *t
         C_MUL (fok, tmp, st->super_twiddles[k-1]);
         C_ADD (st->tmpbuf[k],     fek, fok);
         C_SUB (st->tmpbuf[ncfft - k], fek, fok);
-#ifdef USE_SIMD        
+#ifdef USE_SIMD
+# ifdef FIXED_POINT
+        st->tmpbuf[ncfft - k].i = S_NEGATE(st->tmpbuf[ncfft - k].i);
+# else
         st->tmpbuf[ncfft - k].i *= _mm_set1_ps(-1.0);
+# endif
 #else
         st->tmpbuf[ncfft - k].i *= -1;
 #endif
