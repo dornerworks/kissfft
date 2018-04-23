@@ -6,8 +6,9 @@ support to the floating point implementation. This uses SSE and AVX modification
 fixed point implementation.
 
 These modifications were developed by Stewart Hildebrand, Anthony Boorsma, and Kevin Kredit of
-DornerWorks Ltd. Visit https://dornerworks.com/ and https://dornerworks.com/about/blog/
-[TODO link to blog post] to learn more about the company and writing vectorized code.
+DornerWorks Ltd. Visit https://dornerworks.com/ and
+https://dornerworks.com/blog/writing-vectorized-code to learn more about the company and writing
+vectorized code.
 
 Notice that the modifications were made for the functioning of the 'simd_sample_app'. It is possible
 and quite likely that the built-in KISS FFT test tools are broken. That work will be left for a
