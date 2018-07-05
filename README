@@ -12,11 +12,30 @@ https://dornerworks.com/blog/writing-vectorized-code to learn more about the
 company and writing vectorized code.
 
 Notice that the modifications were made for the functioning of the 'simd_sample_app'.
-It is possible and quite likely that the built-in KISS FFT test tools are broken.
+The built-in KISS FFT test tools are broken, and would require significant work
+or rewriting to function with KISS FFT given the C, SSE, and AVX changes.
 That work will be left for a future time, when
   (1) these modifications are upstreamed into the original KISS FFT library,
   (2) an interested party engages DornerWorks to do more development, or
   (3) an interested party takes that task upon themselves.
+
+
+
+The simd_sample_app program showcases the runtime speeds of the different KISS
+FFT builds (C, SSE, and AVX) as well as using FFTW on the same fixed-point dataset.
+Because this is aimed at showcasing fixed-point FFTs, and FFTW does not support
+fixed-point FFTs, the runtime for FFTW includes the time required to translate
+the data to and from floating-point numbers. Please note that the runtimes vary
+significantly depending on CPU architecture.
+
+The sample app creates an array of number sets (a multiple of 8), then sends the
+array to each FFT implementation for timing. Each implementation does the FFT of
+each of the number sets in the array multiple times (based on the NUM_RUNS define),
+then sends the results of the last number set of the last run back for comparison.
+This is just a representative sample of all of the FFTs it calculated, for
+demonstration purposes. A real application would of course use all the FFT data.
+
+simd_sample_app was vectorized and improved by Stephen Ng of DornerWorks Ltd.
 
 ========
 CONTENTS
@@ -35,7 +54,7 @@ CONTENTS
 USAGE
 =====
  * simd_sample_app
-    - prerequisite: FFTW is installed
+    - prerequisite: FFTW3 is installed (for Cygwin, get libfftw3-devel)
     - This sample program can (and has been) built and run in Cygwin and on Linux.
       It has not been tested in a native Windows environment.
     - enter the simd_sample_app/ directory and `make` the program

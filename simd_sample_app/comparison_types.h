@@ -26,6 +26,12 @@ extern "C" {
 /******************************************************************************
  *                                                                    Defines *
  ******************************************************************************/
+/* The number of runs to do for the timing test */
+#define NUM_RUNS (8192)
+/* The number of number sets to run FFT tests on.
+ * This must be a multiple of 8 in order to not break everything */
+#define NUM_FFT_SETS (8)
+
 #define FFT_LEN (1024)
 #define FFTR_LEN (1024)
 #define FFTR_OUT_LEN (FFTR_LEN / 2)
@@ -78,6 +84,16 @@ typedef struct results_s
    uint32_t runtime_ns;
    verboseness_t verbose;
 } results_t;
+
+typedef struct input_array_s
+{
+   SIMD_ALIGNED fft_input_t input_array[NUM_FFT_SETS];
+} input_array_t;
+
+typedef struct inputr_array_s
+{
+   SIMD_ALIGNED fftr_input_t input_array[NUM_FFT_SETS];
+} inputr_array_t;
 
 
 /******************************************************************************
