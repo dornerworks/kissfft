@@ -1,18 +1,19 @@
-This repo exists to demonstrate the benefits and ease of use of SSE and AVX extensions added to
-Mark Borgerding's KISS FFT library.
+This fork exists to demonstrate the benefits and ease of use of SSE and AVX
+extensions added to Mark Borgerding's KISS FFT library.
 
-This does NOT utilize the USE_SIMD compiler option already included in KISS FFT. That offers SSE
-support to the floating point implementation. This uses SSE and AVX modification to support the
-fixed point implementation.
+The KISS FFT library supports both floating point and fixed point FFT calculations,
+and the floating point implementation already supports SSE acceleration when
+utilizing the USE_SIMD compiler option. This fork uses SSE and AVX in the fixed
+point implementation.
 
-These modifications were developed by Stewart Hildebrand, Anthony Boorsma, and Kevin Kredit of
-DornerWorks Ltd. Visit https://dornerworks.com/ and
-https://dornerworks.com/blog/writing-vectorized-code to learn more about the company and writing
-vectorized code.
+These modifications were developed by Stewart Hildebrand, Anthony Boorsma, and
+Kevin Kredit of DornerWorks Ltd. Visit https://dornerworks.com/ and
+https://dornerworks.com/blog/writing-vectorized-code to learn more about the
+company and writing vectorized code.
 
-Notice that the modifications were made for the functioning of the 'simd_sample_app'. It is possible
-and quite likely that the built-in KISS FFT test tools are broken. That work will be left for a
-future time, when
+Notice that the modifications were made for the functioning of the 'simd_sample_app'.
+It is possible and quite likely that the built-in KISS FFT test tools are broken.
+That work will be left for a future time, when
   (1) these modifications are upstreamed into the original KISS FFT library,
   (2) an interested party engages DornerWorks to do more development, or
   (3) an interested party takes that task upon themselves.
@@ -24,21 +25,24 @@ CONTENTS
     - this file
  * LICENSE
     -  the BSD 3-Clause “Revised” License, same as the original KISS FFT library
- * kiss_fft130/
-    - in the initial commit, a clone of the KISS FFT library; see git history for modifications
+ * kiss_fft/
+    - the vectorized KISS FFT library; see git history for modifications
  * simd_sample_app/
-    - source for a sample application designed to demonstrate the ease of use and the accleration
-      resulting from the SSE and AVX extensions
+    - source for a sample application designed to demonstrate the ease of use and
+      the acceleration resulting from the SSE and AVX extensions
 
 =====
 USAGE
 =====
  * simd_sample_app
     - prerequisite: FFTW is installed
-    - enter the simd_sample_app/ directory and run `./make.sh`
+    - This sample program can (and has been) built and run in Cygwin and on Linux.
+      It has not been tested in a native Windows environment.
+    - enter the simd_sample_app/ directory and `make` the program
     - execute the application with `./build/simd_sample_app`
     - observe the results
  * your own application
-    - use simd_sample_app or any other application using the original KISS FFT library as an example
-    - include and copy the source code into your application while respecting the terms of the
-      license
+    - use simd_sample_app or any other application using the original KISS FFT
+      library as an example
+    - include and copy the source code into your application while respecting the
+      terms of the license

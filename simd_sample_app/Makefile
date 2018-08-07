@@ -1,3 +1,7 @@
+# Author: Stephen Ng, DornerWorks, Ltd.
+# Copyright (c) 2018, DornerWorks, Ltd.
+# See LICENSE for full licensing and copying information
+
 CC = gcc
 
 KISSDIR = ../kiss_fft

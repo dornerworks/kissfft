@@ -4,7 +4,7 @@
  * \brief Tests and compares KISS FFT to FFTW and KISS FFT with vectorization
  * \details See README
  *
- * \copyright Copyright (c) 2018, DornerWorks, Ltd. 
+ * \copyright Copyright (c) 2018, DornerWorks, Ltd.
  * \license See LICENSE for full licensing and copying information
  */
 
