@@ -29,6 +29,9 @@ extern "C" {
 #define FFT_LEN (1024)
 #define FFTR_LEN (1024)
 #define FFTR_OUT_LEN (FFTR_LEN / 2)
+/* Per link, FFTW out buffer must be N/2+1
+ * http://www.fftw.org/fftw3_doc/One_002dDimensional-DFTs-of-Real-Data.html */
+#define FFTR_OUT_LEN_FFTW (FFTR_OUT_LEN + 1)
 
 #define NUM_FFT_COMPARISONS (3)
 #define ALLOWABLE_ERROR (0)
@@ -84,4 +87,3 @@ typedef struct results_s
 }
 #endif
 #endif /* header guard */
-

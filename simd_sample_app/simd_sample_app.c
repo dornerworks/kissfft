@@ -25,10 +25,19 @@
  ******************************************************************************/
 #define NSEC_PER_SEC (1000000000u)
 
+#define HEADER "\n\n==============  simd_sample_app  ==============\n\n" \
+               "This program is intended to show how vector extensions can speed up FFT\n" \
+               "calculations. The baseline results are from the \"vanilla\" KISS FFT library,\n" \
+               "running fixed-point FFT calculations with no vector extensions.\n\n" \
+               "The FFTW library is configured to use both SSE and AVX extensions. However,\n" \
+               "it only runs floating-point calculations, so to run fixed-point FFTs, each\n" \
+               "number must be translated to floating-point first. This translation time is\n" \
+               "counted in the timing, to compare usage for fixed-point FFT scenarios.\n\n\n"
 
 /******************************************************************************
  *                                                      Function declarations *
  ******************************************************************************/
+void printInfoHeader(void);
 void runFftComparisons(void);
 void runFftrComparisons(void);
 
@@ -43,6 +52,7 @@ uint32_t getTimestampNs(void);
  ******************************************************************************/
 int main(void)
 {
+   printInfoHeader();
    runFftComparisons();
    runFftrComparisons();
 
@@ -53,14 +63,24 @@ int main(void)
 /******************************************************************************
  *                                                         Internal functions *
  ******************************************************************************/
+void printInfoHeader(void)
+{
+  printf(HEADER);
+}
+
 void runFftComparisons(void)
 {
    uint32_t time0, time1, time2, time3, time4;
 
+   fftw_complex *in = fftw_malloc(sizeof(fftw_complex) * FFT_LEN);
+   fftw_complex *out = fftw_malloc(sizeof(fftw_complex) * FFT_LEN);
+
    pfft_input_t fft_input = getInputFft();
 
+   fftw_plan plan = getFftwFftPlan(in, out);
+
    time0 = getTimestampNs();
-   pfft_output_t fftw_fft_output = getOutputFftwFft(fft_input);
+   pfft_output_t fftw_fft_output = getOutputFftwFft(fft_input, plan, in, out);
    time1 = getTimestampNs();
    pfft_output_t kiss_fft_plain_output = getOutputKissFftPlain(fft_input);
    time2 = getTimestampNs();
@@ -83,10 +103,15 @@ void runFftrComparisons(void)
 {
    uint32_t time0, time1, time2, time3, time4;
 
+   double *in = fftw_malloc(sizeof(double) * FFTR_LEN);
+   fftw_complex *out = fftw_malloc(sizeof(fftw_complex) * FFTR_OUT_LEN_FFTW);
+
    pfftr_input_t fftr_input = getInputFftr();
 
+   fftw_plan plan = getFftwFftrPlan(in, out);
+
    time0 = getTimestampNs();
-   pfftr_output_t fftw_fftr_output = getOutputFftwFftr(fftr_input);
+   pfftr_output_t fftw_fftr_output = getOutputFftwFftr(fftr_input, plan, in, out);
    time1 = getTimestampNs();
    pfftr_output_t kiss_fftr_plain_output = getOutputKissFftrPlain(fftr_input);
    time2 = getTimestampNs();
@@ -140,4 +165,3 @@ uint32_t getTimestampNs(void)
 
     return time;
 }
-

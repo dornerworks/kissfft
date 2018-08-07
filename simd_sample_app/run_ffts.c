@@ -16,7 +16,6 @@
 
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
-#include <fftw3.h>
 
 #include <string.h>
 
@@ -29,13 +28,10 @@
 
 #define FFTW_REAL (0)
 #define FFTW_IMAG (1)
-/* Per link, FFTW out buffer must be N/2+1
- * http://www.fftw.org/fftw3_doc/One_002dDimensional-DFTs-of-Real-Data.html */
-#define FFTR_OUT_LEN_FFTW (FFTR_OUT_LEN + 1)
 /* These flags were chosen to minimize FFTW runtime; to be fairest, planning
  * time shouldn't be counted... */
 #define FFTW_PLAN_FFT   FFTW_MEASURE
-#define FFTW_PLAN_FFTR  FFTW_ESTIMATE
+#define FFTW_PLAN_FFTR  FFTW_MEASURE
 
 
 /******************************************************************************
@@ -88,34 +84,47 @@ void KissFftrAvxPostprocTranspose(pfftr_output_avx_t transposed, pfftr_output_t 
  *                                                         External functions *
  ******************************************************************************/
 
+/* Planning for FFTW; not counted in timing, for fairness */
+fftw_plan getFftwFftPlan(fftw_complex *in, fftw_complex *out)
+{
+   fftw_plan plan = fftw_plan_dft_1d(FFT_LEN, in, out, FFTW_FORWARD, FFTW_PLAN_FFT);
+   return plan;
+}
+
+fftw_plan getFftwFftrPlan(double *in, fftw_complex *out)
+{
+   fftw_plan plan = fftw_plan_dft_r2c_1d(FFT_LEN, in, out, FFTW_PLAN_FFTR);
+   return plan;
+}
+
+
 /* FFT */
-pfft_output_t getOutputFftwFft(pfft_input_t input)
+pfft_output_t getOutputFftwFft(pfft_input_t input, fftw_plan plan, fftw_complex *in, fftw_complex *out)
 {
    static fft_output_t output;
    memset(&output, 0, sizeof(output));
 
-   fftw_complex *in = fftw_malloc(sizeof(fftw_complex) * FFT_LEN);
-   fftw_complex *out = fftw_malloc(sizeof(fftw_complex) * FFT_LEN);
-   fftw_plan plan = fftw_plan_dft_1d(FFT_LEN, in, out, FFTW_FORWARD, FFTW_PLAN_FFT);
-
-   /* translate input -- prescale to account for normalization */
-   for (int32_t i = 0; i < FFT_LEN; i++)
-   {
-      in[i][FFTW_REAL] = (double)(*input)[i].r / (double)(FFT_LEN);
-      in[i][FFTW_IMAG] = (double)(*input)[i].i / (double)(FFT_LEN);
-   }
 
    for (int32_t i = 0; i < NUM_RUNS; i++)
    {
+      /* translate input to floating point -- prescale to account for normalization */
+      for (int32_t j = 0; j < FFT_LEN; j++)
+      {
+         in[j][FFTW_REAL] = (double)(*input)[j].r / (double)(FFT_LEN);
+         in[j][FFTW_IMAG] = (double)(*input)[j].i / (double)(FFT_LEN);
+      }
+
       fftw_execute(plan);
+
+      /* translate output */
+      for (int32_t j = 0; j < FFT_LEN; j++)
+      {
+         output[j].r = (kiss_fft_scalar)out[j][FFTW_REAL];
+         output[j].i = (kiss_fft_scalar)out[j][FFTW_IMAG];
+      }
+
    }
 
-   /* translate output */
-   for (int32_t i = 0; i < FFT_LEN; i++)
-   {
-      output[i].r = (kiss_fft_scalar)out[i][FFTW_REAL];
-      output[i].i = (kiss_fft_scalar)out[i][FFTW_IMAG];
-   }
 
    fftw_destroy_plan(plan);
    fftw_free(in);
@@ -191,32 +200,30 @@ pfft_output_t getOutputKissFftAvx(pfft_input_t input)
 
 
 /* FFTR */
-pfftr_output_t getOutputFftwFftr(pfftr_input_t input)
+pfftr_output_t getOutputFftwFftr(pfftr_input_t input, fftw_plan plan, double *in, fftw_complex *out)
 {
    static fftr_output_t output;
    memset(&output, 0, sizeof(output));
 
-   double *in = fftw_malloc(sizeof(double) * FFTR_LEN);
-   fftw_complex *out = fftw_malloc(sizeof(fftw_complex) * FFTR_OUT_LEN_FFTW);
-   fftw_plan plan = fftw_plan_dft_r2c_1d(FFTR_LEN, in, out, FFTW_PLAN_FFTR);
-
-   /* translate input -- prescale to account for normalization */
-   for (int32_t i = 0; i < FFTR_LEN; i++)
-   {
-      in[i] = (double)(*input)[i] / (double)(FFTR_LEN);
-   }
-
    for (int32_t i = 0; i < NUM_RUNS; i++)
    {
+      /* translate input to floating point -- prescale to account for normalization */
+      for (int32_t j = 0; j < FFTR_LEN; j++)
+      {
+         in[j] = (double)(*input)[j] / (double)(FFTR_LEN);
+      }
+
       fftw_execute(plan);
+
+      /* translate output */
+      for (int32_t j = 0; j < FFTR_OUT_LEN; j++)
+      {
+         output[j].r = (kiss_fft_scalar)out[j][FFTW_REAL];
+         output[j].i = (kiss_fft_scalar)out[j][FFTW_IMAG];
+      }
+
    }
 
-   /* translate output */
-   for (int32_t i = 0; i < FFTR_OUT_LEN; i++)
-   {
-      output[i].r = (kiss_fft_scalar)out[i][FFTW_REAL];
-      output[i].i = (kiss_fft_scalar)out[i][FFTW_IMAG];
-   }
 
    fftw_destroy_plan(plan);
    fftw_free(in);
@@ -296,13 +303,13 @@ pfftr_output_t getOutputKissFftrAvx(pfftr_input_t input)
  ******************************************************************************/
 
 /*
- * For transpose functions--note that these can be vectorized as well; they are kept 
- * in this form (1) for understandability and (2) because I don't want to spend the 
- * time optimizing a demo 
- *  
- * ALSO note that if SIMD usage is taken into account from the beginning, these kind 
+ * For transpose functions--note that these can be vectorized as well; they are kept
+ * in this form (1) for understandability and (2) because I don't want to spend the
+ * time optimizing a demo
+ *
+ * ALSO note that if SIMD usage is taken into account from the beginning, these kind
  * of transforms may be unneccesary (though only one format would be supported).
- */ 
+ */
 
 /* SSE */
 /* FFT */
@@ -403,4 +410,3 @@ void KissFftrAvxPostprocTranspose(pfftr_output_avx_t transposed, pfftr_output_t 
       }
    }
 }
-

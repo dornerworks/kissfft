@@ -1,12 +1,12 @@
 
 # KISS build objects
-kiss_fft130/test/bm_*
-kiss_fft130/test/st_*
-kiss_fft130/test/tkfc_*
-kiss_fft130/test/tr_*
-kiss_fft130/tools/fastconv_*
-kiss_fft130/tools/fastconvr_*
-kiss_fft130/tools/fft_*
+kiss_fft/test/bm_*
+kiss_fft/test/st_*
+kiss_fft/test/tkfc_*
+kiss_fft/test/tr_*
+kiss_fft/tools/fastconv_*
+kiss_fft/tools/fastconvr_*
+kiss_fft/tools/fft_*
 
 # build objects
 *.o
